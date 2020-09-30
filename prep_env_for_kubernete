@@ -1,0 +1,71 @@
+https://opensource.com/article/20/6/kubernetes-raspberry-pi
+https://www.weave.works/blog/running-highly-available-clusters-with-kubeadm
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/setup-ha-etcd-with-kubeadm/
+https://icicimov.github.io/blog/kubernetes/Kubernetes-cluster-step-by-step-Part5/
+# haproxy lb 
+kubectl apply -f https://raw.githubusercontent.com/haproxytech/kubernetes-ingress/master/deploy/haproxy-ingress.yaml
+
+# install kubernetes packages
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+apt update
+apt install -y kubelet kubeadm kubectl
+
+apt install -y containerd
+apt install -y docker.io
+docker info
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+sed -i '$ s/$/ cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1 swapaccount=1/' /boot/firmware/cmdline.txt
+
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+$ sudo sysctl --system
+
+enable and start haproxy
+enable and start keepalived
+Install first control planes
+   TOKEN=$(kubeadm token generate)
+   kubeadm init --token=$TOKEN --kubernetes-version=v1.19.2 --pod-network-cidr=10.224.0.0/16 --control-plane-endpoint=192.168.4.10
+   
+copy certs to new control planes to be before joining them into cluster
+USER=ubuntu # customizable
+CONTROL_PLANE_IPS="192.168.4.116 192.168.4.170"
+for host in ${CONTROL_PLANE_IPS}; do
+    scp /etc/kubernetes/pki/ca.crt "${USER}"@$host:
+    scp /etc/kubernetes/pki/ca.key "${USER}"@$host:
+    scp /etc/kubernetes/pki/sa.key "${USER}"@$host:
+    scp /etc/kubernetes/pki/sa.pub "${USER}"@$host:
+    scp /etc/kubernetes/pki/front-proxy-ca.crt "${USER}"@$host:
+    scp /etc/kubernetes/pki/front-proxy-ca.key "${USER}"@$host:
+    scp /etc/kubernetes/pki/etcd/ca.crt "${USER}"@$host:etcd-ca.crt
+    # Quote this line if you are using external etcd
+    scp /etc/kubernetes/pki/etcd/ca.key "${USER}"@$host:etcd-ca.key
+done
+
+USER=ubuntu # customizable
+mkdir -p /etc/kubernetes/pki/etcd
+mv /home/${USER}/ca.crt /etc/kubernetes/pki/
+mv /home/${USER}/ca.key /etc/kubernetes/pki/
+mv /home/${USER}/sa.pub /etc/kubernetes/pki/
+mv /home/${USER}/sa.key /etc/kubernetes/pki/
+mv /home/${USER}/front-proxy-ca.crt /etc/kubernetes/pki/
+mv /home/${USER}/front-proxy-ca.key /etc/kubernetes/pki/
+mv /home/${USER}/etcd-ca.crt /etc/kubernetes/pki/etcd/ca.crt
+# Quote this line if you are using external etcd
+mv /home/${USER}/etcd-ca.key /etc/kubernetes/pki/etcd/ca.key
+
+
