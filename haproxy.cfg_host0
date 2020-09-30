@@ -1,0 +1,116 @@
+#---------------------------------------------------------------------
+# Example configuration for a possible web application.  See the
+# full configuration options online.
+#
+#   http://haproxy.1wt.eu/download/1.4/doc/configuration.txt
+#
+#---------------------------------------------------------------------
+
+#---------------------------------------------------------------------
+# Global settings
+#---------------------------------------------------------------------
+global
+    # to have these messages end up in /var/log/haproxy.log you will
+    # need to:
+    #
+    # 1) configure syslog to accept network log events.  This is done
+    #    by adding the '-r' option to the SYSLOGD_OPTIONS in
+    #    /etc/sysconfig/syslog
+    #
+    # 2) configure local2 events to go to the /var/log/haproxy.log
+    #   file. A line like the following can be added to
+    #   /etc/sysconfig/syslog
+    #
+    #    local2.*                       /var/log/haproxy.log
+    #
+    log         127.0.0.1 local2
+
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    maxconn     4000
+    user        haproxy
+    group       haproxy
+    daemon
+
+    # turn on stats unix socket
+    stats socket /var/lib/haproxy/stats
+
+#---------------------------------------------------------------------
+# common defaults that all the 'listen' and 'backend' sections will
+# use if not designated in their block
+#---------------------------------------------------------------------
+defaults
+    mode                    http
+    log                     global
+    option                  httplog
+    option                  dontlognull
+    option http-server-close
+    option forwardfor       except 127.0.0.0/8
+    option                  redispatch
+    retries                 3
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         10s
+    timeout client          1m
+    timeout server          1m
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 3000
+
+#---------------------------------------------------------------------
+
+listen stats
+    bind :9000
+    mode http
+    stats enable
+    stats uri /
+    monitor-uri /healthz
+
+
+frontend apiserver
+    bind *:6443
+    default_backend apiserver
+    mode tcp
+    option tcplog
+
+backend apiserver
+    balance source
+    mode tcp
+    #stick-table type ip size 20k peers controlplane_peers
+    server k8s-store3 192.168.4.114:6443 check inter 10s
+    server k8s-store5 192.168.4.116:6443 check inter 10s
+    server k8s-worker7 192.168.4.170:6443 check inter 10s
+    
+frontend ingress-http
+    bind *:80
+    default_backend ingress-http
+    mode tcp
+    option tcplog
+
+backend ingress-http
+    balance source
+    mode tcp
+    #stick-table type ip size 20k peers controlplane_peers
+    server k8s-store3 192.168.4.114:80 check inter 10s
+    server k8s-store5 192.168.4.116:80 check inter 10s
+    server k8s-worker7 192.168.4.170:80 check inter 10s
+   
+frontend ingress-https
+    bind *:443
+    default_backend ingress-https
+    mode tcp
+    option tcplog
+
+backend ingress-https
+    balance source
+    mode tcp
+    #stick-table type ip size 20k peers controlplane_peers
+    server k8s-store3 192.168.4.114:443 check inter 10s
+    server k8s-store5 192.168.4.116:443 check inter 10s
+    server k8s-worker7 192.168.4.170:443 check inter 10s
+
+#peers controlplane_peers
+#    peer k8s-worker1 192.168.4.172:1024
+#    peer k8s-worker4 192.168.4.129:1024
+
+#---------------------------------------------------------------------
