@@ -1,0 +1,16 @@
+
+to run command on all panes at the same time,
+on any tmux pane, type the following
+ctrl+b : setw synchronize-panes on
+
+to stop sending key stroke to all panes type:
+ctrl+b : setw synchronize-panes off
+
+NOTE: 
+split pane horizontally use ctrl+b "
+split pane vertically use ctrl+b %
+rearrange panes tiled use ctrl+b alt+5
+rearrange panes vertical use ctrl+b alt+1
+rearrange panes horizontal use ctrl+b alt+2
+rearrange panes tiled use ctrl+b alt+5
+toggle zoom current pane (forground/background) use ctrl+b z
