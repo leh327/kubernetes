@@ -1,0 +1,10 @@
+pi@raspberrypi:~ $ tmux -S ~/.tmux_socket/default select-layout tiled
+pi@raspberrypi:~ $ tmux -S ~/.tmux_socket/default join-pan -s mySession:4.0
+pi@raspberrypi:~ $ tmux -S ~/.tmux_socket/default join-pan -s mySession:5.0
+pi@raspberrypi:~ $ tmux -S ~/.tmux_socket/default select-layout tiled
+pi@raspberrypi:~ $ tmux -S ~/.tmux_socket/default join-pan -s mySession:6.0
+pi@raspberrypi:~ $ tmux -S ~/.tmux_socket/default join-pan -s mySession:7.0
+can't find window 7
+pi@raspberrypi:~ $ tmux -S ~/.tmux_socket/default select-layout tiled
+pi@raspberrypi:~ $ 
+

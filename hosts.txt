@@ -1,0 +1,7 @@
+k8s-store5
+k8s-worker6
+k8s-worker4
+k8s-worker1
+k8s-store3
+k8s-worker2
+k8s-worker7

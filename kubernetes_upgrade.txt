@@ -1,0 +1,10 @@
+Run the command:
+  apt-mark unhold *
+Update package cache
+   apt update
+Upgrade kubeadm
+  apt install kubeadm=1.19.0-00
+Upgrade cluster
+  kubeadm upgrade apply v1.19.0
+Then upgrade kubelet on the master node
+   apt install kubelet=1.19.0-00

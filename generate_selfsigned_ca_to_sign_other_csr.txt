@@ -1,0 +1,24 @@
+# create private ca key
+openssl genrsa -out ca.key 2048
+
+# create ca certificate signing request
+openssl req -new -key ca.key -subj "/CN=KUBERNETES-CA" -out ca.csr
+
+# sign certificate signing request to create a selfsign certificate which can be used with ca key to sign other csr
+openssl x509 -req -in ca.csr -signkey ca.key -out ca.crt
+
+
+#### now sign other csr
+
+# create private key
+openssl genrsa -out admin.key 2048
+
+# generate admin certificate signing request
+openssl req -new -key admin.key -subj "/CN=kube-admin/OU=system:masters" -out admin.csr
+
+# sign admin certificate signing request with ca key and certificate
+openssl x509 -req -in admin.csr -CAcreateserial -CA ca.crt -CAkey ca.key -out admin.crt
+
+# Use admin cert, admin private key, and ca cert to communicate with api server
+curl https://kube-apiserver:6443/api/v1/pods --key admin.key --cert admin.crt --cacert ca.crt
+
