@@ -1,0 +1,301 @@
+https://medium.com/platformer-blog/kubernetes-on-centos-7-with-firewalld-e7b53c1316af
+
+Kubernetes on centos with firewalld
+
+
+This post is based on the use case of setting up kubernetes with kubeadm on a cluster provisioned with CentOS 7 with firewalld enabled. I decided to write this post as I couldn’t find proper documentation on all the ports that are required to open in this particular use case and thought it would come in handy for those would run into the same problems I ran in the future.
+Image for post
+Minimum System Requirements
+1x Master VM with minimum 2 CPU and 2GB of RAM
+2x Worker VMs with minimum 2 CPU and 4GB of Ram ( You can change this config according to the workloads you run)
+CentOS 7.x should be installed on all the machines
+Installing Prerequisites
+To get started we need to configure all of the VMs with a container runtime (docker in our case) and kubernetes packages. To do this, please go ahead and run the following script in all of your nodes using the following command.
+sudo su
+curl -s https://gist.githubusercontent.com/nilesh93/609c8152fc96b38340de20d1e0ed7c5a/raw/abf4f28e9e2157a38bf3cf0caa8730db6c344e1f/kuberentes-centos-7.sh | sh -s
+
+
+
+#!/bin/bash
+
+yum -y update
+yum -y install net-tools wget telnet yum-utils device-mapper-persistent-data lvm2
+
+### Add Docker repository.
+yum-config-manager \
+  --add-repo \
+  https://download.docker.com/linux/centos/docker-ce.repo -y
+
+## Install Docker CE.
+yum -y update && yum -y  install docker-ce-18.06.2.ce
+
+## Create /etc/docker directory.
+mkdir /etc/docker
+
+# Setup daemon.
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
+EOF
+
+mkdir -p /etc/systemd/system/docker.service.d
+
+# Restart Docker
+systemctl daemon-reload
+systemctl enable docker
+systemctl restart docker
+
+# Disable swap
+swapoff -a
+sed -i 's/^\(.*swap.*\)$/#\1/' /etc/fstab 
+
+# load netfilter probe specifically
+modprobe br_netfilter
+
+# disable SELinux. If you want this enabled, comment out the next 2 lines. But you may encounter issues with enabling SELinux
+setenforce 0
+sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+
+# Install kuberentes packages
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+
+yum -y install kubectl kubelet kubeadm
+systemctl  restart kubelet && systemctl enable kubelet
+
+# Enable IP Forwarding
+echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables
+cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+
+# Restarting services
+systemctl daemon-reload
+systemctl restart kubelet
+
+# Install nfs utils for Kubernetes NFS driver
+yum -y install nfs-utils
+
+
+
+Open Ports on Firewall
+With firewalld enabled, you have to open the following ports in order for Kubernetes to work properly. Please note that if you are running this in Cloud, you need to enable these ports on your particular VPC subnet as well.
+On Master open the following ports and restart the service
+firewall-cmd --permanent --add-port=6443/tcp
+firewall-cmd --permanent --add-port=2379-2380/tcp
+firewall-cmd --permanent --add-port=10250/tcp
+firewall-cmd --permanent --add-port=10251/tcp
+firewall-cmd --permanent --add-port=10252/tcp
+firewall-cmd --permanent --add-port=10255/tcp
+firewall-cmd --permanent --add-port=8472/udp
+firewall-cmd --add-masquerade --permanent
+# only if you want NodePorts exposed on control plane IP as well
+firewall-cmd --permanent --add-port=30000-32767/tcp
+systemctl restart firewalld
+On Worker Nodes open the following ports and restart the service
+firewall-cmd --permanent --add-port=10250/tcp
+firewall-cmd --permanent --add-port=10255/tcp
+firewall-cmd --permanent --add-port=8472/udp
+firewall-cmd --permanent --add-port=30000-32767/tcp
+firewall-cmd --add-masquerade --permanent
+systemctl restart firewalld
+Kubeadm Configuration
+Usually it’s a best practice to enable audits in your cluster. Let’s go ahead and create a basic policy saved in our master prior to kubeadm config init. You can set an advanced policy by checking out the official docs here. Run the following on Master Node.
+mkdir -p /etc/kubernetes
+## Create Default Audit Policy
+cat > /etc/kubernetes/audit-policy.yaml <<EOF
+apiVersion: audit.k8s.io/v1beta1
+kind: Policy
+rules:
+- level: Metadata
+EOF
+# folder to save audit logs
+mkdir -p /var/log/kubernetes/audit
+Now let’s take a look at our kubeadm config file which we use to init (initialise) this cluster.
+Line 5 — Please specify whatever the external IP addresses and domain names you would use to connect to the Kuberentes API server.
+Line 31,45,50 — If you want additional features enabled through feature gates, please have a look at here and add them to the config. Currently I have added TTLAfterFinished feature gate which enables automatic cleanup of completed jobs in Kubernetes.
+Line 41,42 — Pod CIDR and Service CIDR is completely up to you on your network requirements. Make sure these ip ranges don’t coincide with your existing IP Ranges in the system. It’s important to note that you should have a look at the CNI plugin you are about to install when deciding the Pod CIDR as if it’s different from the spec the CNI plugin provider has given, you will have to manually add the CIDR to the yaml configs of the CNI plugin as well.
+
+
+
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: ClusterConfiguration
+kubernetesVersion: v1.14.3 # change according to kubeadm supported version
+apiServer:
+  certSANs:
+  - 127.0.0.1
+  - cluster-api.example.com # change according to your requirements
+  extraArgs:
+    authorization-mode: Node,RBAC
+    feature-gates: "TTLAfterFinished=true"
+    audit-policy-file: "/etc/kubernetes/audit-policy.yaml"
+    audit-log-path: "/etc/kubernetes/audit/kube-apiserver-audit.log"
+    audit-log-maxage: "2"
+  extraVolumes:
+  - name: "audit-policy"
+    hostPath: "/etc/kubernetes/audit-policy.yaml"
+    mountPath: "/etc/kubernetes/audit-policy.yaml"
+    readOnly: false
+    pathType: File
+  - name: "audit-volume"
+    hostPath: "/var/log/kubernetes/audit"
+    mountPath: "/etc/kubernetes/audit"
+    readOnly: false
+    pathType: DirectoryOrCreate
+  timeoutForControlPlane: 4m0s
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controlPlaneEndpoint: ""
+controllerManager: 
+  extraArgs:
+    feature-gates: "TTLAfterFinished=true"
+    bind-address: 0.0.0.0
+dns:
+  type: CoreDNS
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+imageRepository: k8s.gcr.io
+networking:
+  dnsDomain: cluster.local
+  podSubnet: 192.168.0.0/16 # change according to your requirements
+  serviceSubnet: 10.96.0.0/12 # change according to your requirements
+scheduler:
+  extraArgs:
+    feature-gates: "TTLAfterFinished=true"
+    bind-address: 0.0.0.0
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+FeatureGates:
+  TTLAfterFinished: true
+
+
+
+Now let’s go ahead and init the master with the following command.
+curl https://gist.githubusercontent.com/nilesh93/c743205d34fedb5f48ae4d37d959ba4b/raw/c21b63d0e30449b0382e7508c2db4726a7675bab/kubeadm-config.yaml -o kubeadm-config.yaml
+# update the file as necessary and then run below
+kubeadm init --config kubeadm-config.yaml
+Next, You would have a join command printed in the console. Copy that and keep it somewhere safe. We would need it in the step after this. Now let’s set up kubectl exactly the way it is printed in your terminal by running the following as the non root user. (You can run as root too if you want)
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+Setup CNI Plugin
+We need to configure a CNI plugin to enable cluster networking in kubernetes. You can select a plugin you prefer from here depending on your use cases. In this example we will use calico. If you have entered a different pod CIDR than the one specified in the CNI Plugin documentation, please first download the yaml and change the CIDR to the one you specified. The following commands should be run as non root if you executed the above step as non root.
+kubectl apply -f  https://docs.projectcalico.org/v3.7/manifests/calico.yaml
+With this completed, Your master should be in a ready state in a couple of mins. You can check status by running.
+kubectl get nodes 
+NOTE: If you are running your workloads in Google Cloud Infrastructure, please add the following firewall rule by running the following commands in cloud shell because GCE blocks traffic between hosts by default (where the source-ranges parameter assumes you have created your project with the default GCE network parameters — modify the address range if yours is different)
+gcloud config set project PROJECT_ID
+gcloud config set compute/zone zone_name
+gcloud compute firewall-rules create calico-ipip --allow 4 --network "default" --source-ranges "10.128.0.0/9"
+Join the Workers
+This is the easiest step out of all. Now since your master plane is configured, you can go ahead and join any number of worker nodes you need by running the join command you copy pasted and saved after you ran the kubeadm init command. If you have lost it, don’t worry we can always generate a new one by running the following. Make sure to run these as root user.
+# on master to craete a new join token
+kubeadm token create --print-join-command
+Run the join command on the terminals of the worker nodes and you should be good to go.
+Setup Logging
+The default centos docker installation outputs logs to journald driver instead of /var/log/containers. Due to this, if you set up EFK, ELK or whatever the logging stack you prefer, your logs will not get streamed as the logs will not be there. To fix this, on all nodes (master included) do the following.
+vi /etc/sysconfig/docker
+Delete the following option — log-driver=journald and save the file.
+systemctl daemon-reload
+systemctl restart docker
+Testing Configurations
+Once everything is set, you have to test your cluster to see if it all works out as expected. Simply run the following commands and check if it all works out.
+kubectl create ns testing
+kubectl run hello-app --image gcr.io/google-samples/hello-app:1.0 --port 8080 -n testing
+kubectl expose deploy hello-app --port 80 --target-port 8080 -n testing --type=NodePort
+kubectl get svc -n testing
+When you get the services listed here please do a curl on each of the ip addresses of your worker nodes : the host port it is mapped in the service. An example would be in my execution of this test case,
+Image for postImage for post
+NodePort exposed on 31719
+As you can see here, the NodePort allocated is 31719. Therefore from the master node if you can do a curl on all of the worker nodes to the port 31719, you should be able to verify that everything is working. If for some instance this is not working, please see if you have enabled all the ports that are mentioned here in this post. You can check the open ports by running
+firewall-cmd --list-all
+Once that is confirmed, let’s check the internal routing by executing into a busybox in the cluster.
+kubectl run busybox -n testing --rm --image=busybox:1.27 -it --restart=Never -- /bin/sh
+By running this, a pod would spin up with a busybox container and you will be attached to the shell of that container. Now you can run,
+nslookup hello-app.testing
+And it should get resolved to nginx.testing.svc.cluster.local successfully which would verify that our internal dns resolution works. You could do the same for external dns as well by running ,
+nslookup google.com
+This should get resolved as well unless you have outbound calls not allowed for the above domain in your firewall. In that case, use an external domain that is allowed in the firewall rules contacting your network administrator.
+To clean it all up run,
+kubectl delete deploy,pods,svc --all -n testing
+kubectl delete ns testing
+To test whether the logs are getting saved in /var/log/containers, simply run the following and check.
+ls -ll /var/log/containers/
+Conclusion
+I believe in this post I have guided someone getting Kubernetes up and running on CentOS. If you want SELinux enabled, please bare in mind that you may run into problems as mentioned here with CNI plugins. I have successfully used weavenet with SELinux and it worked without any issues. However it’s advisable to run SELinux disabled until SELinux support is improved in the kubelet.
+Clap if this helped you and let me know your thoughts and queries in the comment section and I will see how I can help you out.
+Cheers!
+Thanks to Dimuthu de Silva. 
+Kubernetes
+Centos7
+Firewalld
+Kubeadm
+206 claps
+
+3 responses
+
+
+
+Nilesh Jayanandana
+WRITTEN BY
+
+Nilesh Jayanandana
+Follow
+Software Architect at Platformer
+Platformer Cloud
+Platformer Cloud
+
+Follow
+Platformer.com Blog | Technical stories written by our team, partners and invited authors on Cloud, Containers, Kubernetes, Serverless, etc
+More From Medium
+How to Crush Your Next Senior Developer Interview
+Pen Magnet
+
+So You Want to be a Manager?
+Kevin Wanke in Better Programming
+
+Prograph
+Noel Rappin
+
+Distributed Systems as Data Pipelines
+Kislay Verma in Better Programming
+
+TransactionTooLargeException and a Bridge to Safety — Part 1
+Brian Yencho in Livefront
+
+SQL for Beginners and Analysts — Get Started with SQL using Python , PART-1.
+Ajay Mane
+
+Digital Archivability
+Kurt Yalcin
+
+The Real Face of Python — An Introduction
+Chukwunonso Nwafor in Django Framework — Real World Projects
+
+Discover Medium
+Welcome to a place where words matter. On Medium, smart voices and original ideas take center stage - with no ads in sight. Watch
+Make Medium yours
+Follow all the topics you care about, and we’ll deliver the best stories for you to your homepage and inbox. Explore
+Become a member
+Get unlimited access to the best stories on Medium — and support writers while you’re at it. Just $5/month. Upgrade

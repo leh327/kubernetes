@@ -12,7 +12,7 @@ spec:
       httpGet:
         host: localhost
         path: /healthz
-        port: 6443
+        port: 9000
         scheme: HTTPS
     volumeMounts:
     - mountPath: /usr/local/etc/haproxy/haproxy.cfg
