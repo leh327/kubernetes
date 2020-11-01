@@ -1,0 +1,76 @@
+https://www.linuxsysadmins.com/install-ansible-awx-on-kubernetes/?amp=1
+create nfs share
+  install nfs-kernel-server on nfs server
+  create /etc/exports
+  /nfs_shares/pgsql  192.168.4.116(no_root_squash,rw,sync,no_subtree_check) 192.168.4.172(no_root_squash,rw,sync,no_subtree_check) 192.168.4.128(no_root_squash,rw,sync,no_subtree_check) 192.168.4.114(no_root_squash,rw,sync,no_subtree_check) 192.168.4.135(no_root_squash,rw,sync,no_subtree_check) 192.168.4.170(no_root_squash,rw,sync,no_subtree_check) 192.168.4.173(no_root_squash,rw,sync,no_subtree_check) 192.168.4.240(no_root_squash,rw,sync,no_subtree_check) 192.168.4.129(no_root_squash,rw,sync,no_subtree_check)
+#
+  exportfs -av
+on all worker nodes install nfs-common
+create persistent volume named data
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    labels:
+      app: postgresql
+      release: awx-postgresql
+      role: master
+    name: data
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 10Gi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: data-awx-postgresql-postgresql-0
+      namespace: awx
+    mountOptions:
+    - hard
+    - nfsvers=4.1
+    nfs:
+      path: /nfs_shares/pgsql
+      server: 192.168.4.116
+    persistentVolumeReclaimPolicy: Retain
+    volumeMode: Filesystem
+
+create docker-registry secret to login into hub.docker.com
+  kubectl create secret docker-registry leh327bsecret --docker-server=hub.docker.com --docker-username=leh327b --docker-password=mydockerpassword --docker-email=myemail@server
+Install awx
+  deploy flannel on kubernete
+    kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  install helm
+     echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+     apt update
+     apt install helm
+     $ helm repo add stable https://charts.helm.sh/stable
+     $ helm search repo stable
+     $ helm repo update              # Make sure we get the latest list of charts
+     $ helm install stable/mysql --generate-name
+     $ helm ls
+     $ helm uninstall mysql-abwome1234
+  git clone https://github.com/ansible/awx.git
+  install prereq:
+    install kubectl helm ansible python3.9 python3-pip
+    pip3 install docker
+  cd awx/installer
+  run ansible-playbook -i inventory install.yml
+kubectl edit deployment -n awx awx
+  use matonb/awx:15.0.1 docker image
+  add imagePullSecretes:
+      - name: the_secret_name_create_above
+kubectl get po -n awx ansible-tower-management -o yaml > po.yaml
+  edit po.yaml to replace ansible/awx with matonb/awx:15.0.1
+      add imagePullSecrets
+  kubectl delete -n awx po ansible-tower-management
+  kubectl create -f po.yaml
+use awx/installer/roles/kubernetes/tasks/main.yml last few tasks to 
+  create admin user 
+  create_preload_data, 
+  scale up aws deployment named awx
+login to awx at masternode:31585 as a result of kubectl get -n awx svc awx-web-svc
+clean up
+  delete ansible-tower-management pod, 
+  uninstall helm
