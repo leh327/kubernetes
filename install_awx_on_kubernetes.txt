@@ -70,6 +70,9 @@ use awx/installer/roles/kubernetes/tasks/main.yml last few tasks to
   create admin user 
   create_preload_data, 
   scale up aws deployment named awx
+  kubectl -n awx scale deployment awx --replicas=3
+scale down if don't need to that many instances
+  kubectl -n awx scale deployment awx --replicas=1
 login to awx at masternode:31585 as a result of kubectl get -n awx svc awx-web-svc
 clean up
   delete ansible-tower-management pod, 
