@@ -1,0 +1,15 @@
+ $  kubectl get all --all-namespaces -o yaml > kubectl_backup.yaml
+ssh master node
+# apt install etcd-client
+ETCDCTL_API=3 etcdctl snapshot list members --endpoints=https://192.168.4.114:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key
+ETCDCTL_API=3 etcdctl snapshot save snapshot.db --endpoints=https://192.168.4.114:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key
+ETCDCTL_API=3 etcdctl snapshot status snapshot.db --endpoints=https://192.168.4.114:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key
+ETCDCTL_API=3 etcdctl snapshot restore snapshot.db --data-dir /var/lib/etcd-from-backup \
+--initial-cluster=k8s-worker7=https://192.168.4.170:2380,k8s-store3=https://192.168.4.114:2380,k8s-store5=https://182.168.4.116:2380 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+--initial-advertise-peer-urls=https://192.168.4.114:2380
+
+
+update /etc/kubernetes/manifest/etcd.yaml to point to data-dir /var/lib/etcd-from-backup

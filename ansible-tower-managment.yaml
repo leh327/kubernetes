@@ -1,0 +1,274 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"creationTimestamp":"2020-11-01T18:35:46Z","managedFields":[{"apiVersion":"v1","fieldsType":"FieldsV1","fieldsV1":{"f:metadata":{"f:annotations":{".":{},"f:kubectl.kubernetes.io/last-applied-configuration":{}}},"f:spec":{"f:containers":{"k:{\"name\":\"ansible-tower-management\"}":{".":{},"f:command":{},"f:image":{},"f:imagePullPolicy":{},"f:name":{},"f:resources":{},"f:terminationMessagePath":{},"f:terminationMessagePolicy":{},"f:volumeMounts":{".":{},"k:{\"mountPath\":\"/etc/tower/SECRET_KEY\"}":{".":{},"f:mountPath":{},"f:name":{},"f:readOnly":{},"f:subPath":{}},"k:{\"mountPath\":\"/etc/tower/conf.d/\"}":{".":{},"f:mountPath":{},"f:name":{},"f:readOnly":{}},"k:{\"mountPath\":\"/etc/tower/settings.py\"}":{".":{},"f:mountPath":{},"f:name":{},"f:readOnly":{},"f:subPath":{}}}}},"f:dnsPolicy":{},"f:enableServiceLinks":{},"f:imagePullSecrets":{".":{},"k:{\"name\":\"leh327bsecret\"}":{".":{},"f:name":{}}},"f:restartPolicy":{},"f:schedulerName":{},"f:securityContext":{},"f:terminationGracePeriodSeconds":{},"f:volumes":{".":{},"k:{\"name\":\"awx-application-config\"}":{".":{},"f:configMap":{".":{},"f:defaultMode":{},"f:items":{},"f:name":{}},"f:name":{}},"k:{\"name\":\"awx-application-credentials\"}":{".":{},"f:name":{},"f:secret":{".":{},"f:defaultMode":{},"f:items":{},"f:secretName":{}}},"k:{\"name\":\"awx-secret-key\"}":{".":{},"f:name":{},"f:secret":{".":{},"f:defaultMode":{},"f:items":{},"f:secretName":{}}}}}},"manager":"kubectl-client-side-apply","operation":"Update","time":"2020-11-01T18:35:46Z"},{"apiVersion":"v1","fieldsType":"FieldsV1","fieldsV1":{"f:status":{"f:conditions":{"k:{\"type\":\"ContainersReady\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:message":{},"f:reason":{},"f:status":{},"f:type":{}},"k:{\"type\":\"Initialized\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:status":{},"f:type":{}},"k:{\"type\":\"Ready\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:message":{},"f:reason":{},"f:status":{},"f:type":{}}},"f:containerStatuses":{},"f:hostIP":{},"f:phase":{},"f:podIP":{},"f:podIPs":{".":{},"k:{\"ip\":\"10.224.4.3\"}":{".":{},"f:ip":{}}},"f:startTime":{}}},"manager":"kubelet","operation":"Update","time":"2020-11-01T18:35:50Z"}],"name":"ansible-tower-management","namespace":"awx","resourceVersion":"3196351","selfLink":"/api/v1/namespaces/awx/pods/ansible-tower-management","uid":"3ea30c08-d0eb-4ecb-afef-a20c0d7d4240"},"spec":{"containers":[{"command":["sleep","infinity"],"image":"matonb/awx:15.0.1","imagePullPolicy":"Always","name":"ansible-tower-management","resources":{},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","volumeMounts":[{"mountPath":"/etc/tower/settings.py","name":"awx-application-config","readOnly":true,"subPath":"settings.py"},{"mountPath":"/etc/tower/conf.d/","name":"awx-application-credentials","readOnly":true},{"mountPath":"/etc/tower/SECRET_KEY","name":"awx-secret-key","readOnly":true,"subPath":"SECRET_KEY"},{"mountPath":"/var/run/secrets/kubernetes.io/serviceaccount","name":"default-token-hdxfh","readOnly":true}]}],"dnsPolicy":"ClusterFirst","enableServiceLinks":true,"imagePullSecrets":[{"name":"leh327bsecret"}],"nodeName":"k8s-worker6","preemptionPolicy":"PreemptLowerPriority","priority":0,"restartPolicy":"Never","schedulerName":"default-scheduler","securityContext":{},"serviceAccount":"default","serviceAccountName":"default","terminationGracePeriodSeconds":30,"tolerations":[{"effect":"NoExecute","key":"node.kubernetes.io/not-ready","operator":"Exists","tolerationSeconds":300},{"effect":"NoExecute","key":"node.kubernetes.io/unreachable","operator":"Exists","tolerationSeconds":300}],"volumes":[{"configMap":{"defaultMode":420,"items":[{"key":"awx_settings","path":"settings.py"}],"name":"awx-config"},"name":"awx-application-config"},{"name":"awx-secret-key","secret":{"defaultMode":420,"items":[{"key":"secret_key","path":"SECRET_KEY"}],"secretName":"awx-secrets"}},{"name":"awx-application-credentials","secret":{"defaultMode":420,"items":[{"key":"credentials_py","path":"credentials.py"}],"secretName":"awx-secrets"}},{"name":"default-token-hdxfh","secret":{"defaultMode":420,"secretName":"default-token-hdxfh"}}]}}
+  creationTimestamp: "2020-11-01T19:29:59Z"
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+      f:spec:
+        f:containers:
+          k:{"name":"ansible-tower-management"}:
+            .: {}
+            f:command: {}
+            f:image: {}
+            f:imagePullPolicy: {}
+            f:name: {}
+            f:resources: {}
+            f:terminationMessagePath: {}
+            f:terminationMessagePolicy: {}
+            f:volumeMounts:
+              .: {}
+              k:{"mountPath":"/etc/tower/SECRET_KEY"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+                f:readOnly: {}
+                f:subPath: {}
+              k:{"mountPath":"/etc/tower/conf.d/"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+                f:readOnly: {}
+              k:{"mountPath":"/etc/tower/settings.py"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+                f:readOnly: {}
+                f:subPath: {}
+              k:{"mountPath":"/var/run/secrets/kubernetes.io/serviceaccount"}:
+                .: {}
+                f:mountPath: {}
+                f:name: {}
+                f:readOnly: {}
+        f:dnsPolicy: {}
+        f:enableServiceLinks: {}
+        f:imagePullSecrets:
+          .: {}
+          k:{"name":"leh327bsecret"}:
+            .: {}
+            f:name: {}
+        f:nodeName: {}
+        f:preemptionPolicy: {}
+        f:priority: {}
+        f:restartPolicy: {}
+        f:schedulerName: {}
+        f:securityContext: {}
+        f:serviceAccount: {}
+        f:serviceAccountName: {}
+        f:terminationGracePeriodSeconds: {}
+        f:tolerations: {}
+        f:volumes:
+          .: {}
+          k:{"name":"awx-application-config"}:
+            .: {}
+            f:configMap:
+              .: {}
+              f:defaultMode: {}
+              f:items: {}
+              f:name: {}
+            f:name: {}
+          k:{"name":"awx-application-credentials"}:
+            .: {}
+            f:name: {}
+            f:secret:
+              .: {}
+              f:defaultMode: {}
+              f:items: {}
+              f:secretName: {}
+          k:{"name":"awx-secret-key"}:
+            .: {}
+            f:name: {}
+            f:secret:
+              .: {}
+              f:defaultMode: {}
+              f:items: {}
+              f:secretName: {}
+          k:{"name":"default-token-hdxfh"}:
+            .: {}
+            f:name: {}
+            f:secret:
+              .: {}
+              f:defaultMode: {}
+              f:secretName: {}
+    manager: kubectl-create
+    operation: Update
+    time: "2020-11-01T19:29:59Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          .: {}
+          k:{"type":"ContainersReady"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Initialized"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"PodScheduled"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:lastTransitionTime: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Ready"}:
+            .: {}
+            f:lastProbeTime: {}
+            f:type: {}
+        f:containerStatuses: {}
+        f:hostIP: {}
+        f:phase: {}
+        f:podIP: {}
+        f:podIPs:
+          .: {}
+          k:{"ip":"10.224.4.3"}:
+            .: {}
+            f:ip: {}
+          k:{"ip":"10.224.4.9"}:
+            .: {}
+            f:ip: {}
+        f:startTime: {}
+    manager: kubelet
+    operation: Update
+    time: "2020-11-01T22:53:00Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:conditions:
+          k:{"type":"Ready"}:
+            f:lastTransitionTime: {}
+            f:status: {}
+    manager: kube-controller-manager
+    operation: Update
+    time: "2020-11-01T22:54:56Z"
+  name: ansible-tower-management
+  namespace: awx
+  resourceVersion: "3239906"
+  selfLink: /api/v1/namespaces/awx/pods/ansible-tower-management
+  uid: 059d1f09-5095-4efb-99ae-508a216fd353
+spec:
+  containers:
+  - command:
+    - sleep
+    - infinity
+    image: matonb/awx:15.0.1
+    imagePullPolicy: Always
+    name: ansible-tower-management
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/tower/settings.py
+      name: awx-application-config
+      readOnly: true
+      subPath: settings.py
+    - mountPath: /etc/tower/conf.d/
+      name: awx-application-credentials
+      readOnly: true
+    - mountPath: /etc/tower/SECRET_KEY
+      name: awx-secret-key
+      readOnly: true
+      subPath: SECRET_KEY
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: default-token-hdxfh
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  imagePullSecrets:
+  - name: leh327bsecret
+  nodeName: k8s-worker6
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - configMap:
+      defaultMode: 420
+      items:
+      - key: awx_settings
+        path: settings.py
+      name: awx-config
+    name: awx-application-config
+  - name: awx-secret-key
+    secret:
+      defaultMode: 420
+      items:
+      - key: secret_key
+        path: SECRET_KEY
+      secretName: awx-secrets
+  - name: awx-application-credentials
+    secret:
+      defaultMode: 420
+      items:
+      - key: credentials_py
+        path: credentials.py
+      secretName: awx-secrets
+  - name: default-token-hdxfh
+    secret:
+      defaultMode: 420
+      secretName: default-token-hdxfh
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2020-11-01T19:30:08Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2020-11-01T22:54:56Z"
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2020-11-01T19:32:08Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2020-11-01T19:30:08Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://d4aacb8a879785992a6a05f7206603b7eb533b3ef6a05f07240720665b341838
+    image: matonb/awx:15.0.1
+    imageID: docker-pullable://matonb/awx@sha256:4c454a18f4add21b2f7c51cb3acd7fee85def1b1a4055937687315a97378b534
+    lastState: {}
+    name: ansible-tower-management
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2020-11-01T19:32:07Z"
+  hostIP: 192.168.4.135
+  phase: Running
+  podIP: 10.224.4.9
+  podIPs:
+  - ip: 10.224.4.9
+  qosClass: BestEffort
+  startTime: "2020-11-01T19:30:08Z"
